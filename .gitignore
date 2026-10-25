@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+
+# Generated outputs
+backend/输出/
+
+# Excel temp/lock files
+~$*.xlsx
+*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
