@@ -56,6 +56,26 @@ SPREADSHEET_MEDIA_TYPE = (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = PROJECT_ROOT / "frontend" / "dist"
+# Windows 的 mimetypes 会读取注册表，.js 可能被判成 text/plain，导致浏览器拒绝加载 ES module。
+STATIC_MEDIA_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".mjs": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json",
+    ".map": "application/json",
+    ".txt": "text/plain; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".ico": "image/x-icon",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf",
+}
 UPLOAD_ROOT = Path(tempfile.mkdtemp(prefix="aircraft_std_classify_"))
 atexit.register(lambda: shutil.rmtree(str(UPLOAD_ROOT), ignore_errors=True))
 
@@ -588,8 +608,27 @@ def spa_fallback(full_path: str):
         if candidate.is_file() and (
             FRONTEND_DIST.resolve() in candidate.parents
         ):
-            return FileResponse(candidate)
-    return FileResponse(index_file)
+            suffix = candidate.suffix.lower()
+            cache_control = None
+            if suffix == ".html":
+                cache_control = "no-cache"
+            elif full_path.startswith("assets/"):
+                cache_control = "public, max-age=31536000, immutable"
+            headers = {"Cache-Control": cache_control} if cache_control else None
+            return FileResponse(
+                str(candidate),
+                media_type=STATIC_MEDIA_TYPES.get(suffix),
+                headers=headers,
+            )
+        if candidate.suffix:
+            raise ApiError(
+                "NOT_FOUND", "静态资源不存在：/{}".format(full_path), 404
+            )
+    return FileResponse(
+        str(index_file),
+        media_type=STATIC_MEDIA_TYPES[".html"],
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 # ---------------------------------------------------------------------------

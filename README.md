@@ -34,7 +34,7 @@
 前置条件：
 
 - Anaconda/Miniconda，环境名 `CF`；
-- Node.js 18 及以上；
+- Node.js 18 及以上（仅开发与构建需要；Win7 部署机不需要 Node，见「Win7 离线部署」）；
 - `CF` 环境已安装 `backend/requirements.txt` 中的依赖。
 
 双击根目录的 `start.bat`。脚本会：
@@ -58,6 +58,46 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000
 cd frontend
 npm run dev -- --host 127.0.0.1
 ```
+
+## Win7 离线部署
+
+Win7 无法运行 Vite 6（Vite 6 要求 Node 18+，而 Node 官方最后支持 Win7 的版本是 13.6），因此采用「构建机打包一次、Win7 只跑后端」的方式。**Win7 上不需要安装 Node。**
+
+### 构建机（Node.js 18+）
+
+```bat
+cd frontend
+npm ci
+npm run build
+```
+
+构建完成后确认 `frontend/dist/index.html` 存在。
+
+### Win7 部署机
+
+前置条件：
+
+- Python 3.8.10（最后一个支持 Win7 的 Python 版本）；
+- Anaconda/Miniconda，环境名 `CF`；
+- 浏览器：Chrome/Edge 109，或 Firefox ESR 115。
+
+把整个项目目录拷贝到 Win7（确保包含 `backend/`、`frontend/dist/`、`start-win7.bat`），然后安装后端依赖：
+
+> 仓库中已包含构建好的 `frontend/dist/`，Win7 上无需 Node。修改前端后需要在 Node 18+ 的构建机上重新执行 `npm run build` 并提交新的 dist。
+>
+> 拷贝时可以排除 `frontend/node_modules/`：Win7 上不运行 Node，不需要它。
+
+```bat
+conda activate CF
+cd backend
+python -m pip install -r requirements.txt
+```
+
+双击根目录的 `start-win7.bat`。脚本会检查 `dist`、启动 FastAPI（`http://127.0.0.1:8000`），等待健康检查通过后打开浏览器。FastAPI 同时提供 `/api/*` 接口和 `frontend/dist` 中的前端页面。
+
+修改前端后，需要在 Node 18+ 的构建机上重新执行 `npm run build`，再把新的 `frontend/dist` 拷贝到 Win7。
+
+如需局域网内其他电脑访问，把 `start-win7.bat` 中 uvicorn 的 `--host 127.0.0.1` 改为 `--host 0.0.0.0`，并在 Win7 防火墙放行 8000 端口。Win7 已停止安全更新，请仅在可信内网使用。
 
 ## 使用流程
 
